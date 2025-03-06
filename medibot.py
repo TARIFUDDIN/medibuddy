@@ -2,16 +2,72 @@ import os
 # Force CPU-only mode before importing torch
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
+# Try to prevent PyTorch from looking for CUDA libraries
+os.environ['USE_CUDA'] = '0'
+os.environ['TORCH_USE_CUDA_DSA'] = '0'
+
 import streamlit as st
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
-import torch  # Import torch after setting environment variable
 
-# Keep this line as well for extra safety
-torch.set_default_device("cpu")
+# We need a CPU-only version of PyTorch
+# Define a function that will safely import torch
+def import_cpu_only_torch():
+    import sys
+    import importlib.util
+    
+    # Define a custom loader that will modify PyTorch's behavior
+    class CPUOnlyLoader:
+        def create_module(self, spec):
+            return None
+            
+        def exec_module(self, module):
+            # Import the module normally
+            sys.modules.pop(spec.name, None)  # Remove our custom module
+            module = importlib.import_module(spec.name)
+            
+            # Force CPU-only mode
+            if hasattr(module, '_C'):
+                # Monkey patch _C to prevent CUDA initialization
+                if hasattr(module._C, '_cuda_isDriverSufficient'):
+                    module._C._cuda_isDriverSufficient = lambda: False
+                if hasattr(module._C, '_cuda_getDeviceCount'):
+                    module._C._cuda_getDeviceCount = lambda: 0
+            
+            # Override CUDA availability functions
+            module.cuda = lambda *args, **kwargs: False
+            module.is_available = lambda: False
+            module.cuda.is_available = lambda: False
+            
+            # Update the sys.modules with our modified module
+            sys.modules[spec.name] = module
+            return module
+    
+    # Load PyTorch without CUDA
+    spec = importlib.util.find_spec('torch')
+    loader = CPUOnlyLoader()
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    loader.exec_module(module)
+    return module
+
+# Now import torch safely
+try:
+    torch = import_cpu_only_torch()
+    # Set CPU as default device for extra safety
+    torch.set_default_device("cpu")
+except Exception as e:
+    st.error(f"Failed to import PyTorch: {str(e)}")
+    # If we can't import PyTorch, define a minimal placeholder
+    # This will allow the app to at least start
+    class TorchPlaceholder:
+        def set_default_device(self, device):
+            pass
+    torch = TorchPlaceholder()
+    torch.set_default_device("cpu")
 
 # Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
