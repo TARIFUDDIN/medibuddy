@@ -2,16 +2,18 @@ import streamlit as st
 import os
 import traceback
 import asyncio
-import nest_asyncio
 
 # Fix event loop issues
-nest_asyncio.apply()
-asyncio.set_event_loop(asyncio.new_event_loop())
+try:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+except RuntimeError:
+    pass
 
 # Force CPU-only for PyTorch before any imports
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["USE_CUDA"] = "0"
 
+# Rest of your code remains the same...
 # Try to use FAISS CPU version
 try:
     # Attempt to unload any GPU FAISS if it's loaded
