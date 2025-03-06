@@ -1,14 +1,9 @@
-import os
-from dotenv import load_dotenv  # Import the dotenv package
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 import pypdf
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Step 1: Load raw PDF(s)
 DATA_PATH = "Data/"

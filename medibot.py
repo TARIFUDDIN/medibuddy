@@ -1,14 +1,9 @@
-import os
-from dotenv import load_dotenv  # Import the dotenv package
 import streamlit as st
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
@@ -31,11 +26,11 @@ def set_custom_prompt(custom_prompt_template):
     return prompt
 
 def load_llm(huggingface_repo_id):
-    # Get token from .env file
-    hf_token = os.getenv("HF_TOKEN")
+    # Get token from Streamlit secrets
+    hf_token = st.secrets.get("HF_TOKEN")
     
     if not hf_token:
-        st.error("HuggingFace API token not found in .env file. Please configure it.")
+        st.error("HuggingFace API token not found in secrets. Please configure it in your .streamlit/secrets.toml file.")
         return None
     
     try:
@@ -177,7 +172,7 @@ def main():
                     
                 except Exception as e:
                     st.error(f"Error processing your query: {str(e)}")
-                    st.info("Please check your HuggingFace API token in the .env file.")
+                    st.info("Please check your HuggingFace API token in the secrets.toml file.")
 
 if __name__ == "__main__":
     main()
