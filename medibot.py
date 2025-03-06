@@ -1,4 +1,23 @@
 import streamlit as st
+import os
+import traceback
+
+# Force CPU-only for PyTorch before any imports
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["USE_CUDA"] = "0"
+
+# Try to use FAISS CPU version
+try:
+    # Attempt to unload any GPU FAISS if it's loaded
+    import sys
+    if 'faiss' in sys.modules:
+        del sys.modules['faiss']
+    
+    # Try to import CPU version specifically
+    import faiss.contrib.torch_utils
+except:
+    pass
+
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
@@ -12,14 +31,38 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 @st.cache_resource
 def get_vectorstore():
     try:
+        print("Initializing embeddings with explicit CPU settings...")
+        # Force CPU explicitly
         embedding_model = HuggingFaceEmbeddings(
             model_name='sentence-transformers/all-MiniLM-L6-v2',
-            model_kwargs={'device': 'cpu'}  # Force CPU usage
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'device': 'cpu', 'normalize_embeddings': True}
         )
-        db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+        print("Embeddings initialized successfully")
+        
+        # Check if vector store exists
+        if not os.path.exists(DB_FAISS_PATH):
+            st.error(f"Vector store path does not exist: {DB_FAISS_PATH}")
+            print(f"Vector store path does not exist: {DB_FAISS_PATH}")
+            print(f"Current working directory: {os.getcwd()}")
+            print(f"Directory contents: {os.listdir('.')}")
+            return None
+            
+        print(f"Loading vector store from: {DB_FAISS_PATH}")
+        
+        # Try to load with CPU-only settings
+        db = FAISS.load_local(
+            DB_FAISS_PATH, 
+            embedding_model, 
+            allow_dangerous_deserialization=True
+        )
+        print("Vector store loaded successfully")
         return db
     except Exception as e:
-        st.error(f"Failed to load vector store: {str(e)}")
+        error_msg = f"Failed to load vector store: {str(e)}"
+        st.error(error_msg)
+        print(error_msg)
+        print(traceback.format_exc())  # More detailed error
         return None
 
 def set_custom_prompt(custom_prompt_template):
@@ -97,6 +140,17 @@ def main():
         st.header("About")
         st.markdown("MediBot uses AI to provide medical information from reliable sources.")
         st.markdown("This is for informational purposes only and not a substitute for professional medical advice.")
+        
+        # Add debug info
+        if st.checkbox("Show Debug Info"):
+            st.write(f"Current directory: {os.getcwd()}")
+            st.write(f"Vector store path exists: {os.path.exists(DB_FAISS_PATH)}")
+            try:
+                import torch
+                st.write(f"PyTorch CUDA available: {torch.cuda.is_available()}")
+                st.write(f"PyTorch version: {torch.__version__}")
+            except:
+                st.write("PyTorch not available")
     
     # Chat input
     prompt = st.chat_input("Ask a medical question...")
@@ -174,6 +228,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error processing your query: {str(e)}")
                     st.info("Please check your HuggingFace API token in the secrets.toml file.")
+                    print(traceback.format_exc())  # More detailed error for debugging
 
 if __name__ == "__main__":
     main()
