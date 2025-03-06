@@ -1,8 +1,11 @@
 import os
-# Force CPU-only mode
+# Force CPU-only mode for everything
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ['USE_CUDA'] = '0'
 os.environ['TORCH_USE_CUDA_DSA'] = '0'
+# Force CPU for FAISS
+os.environ['FAISS_NO_AVX2'] = '1'  # Disable AVX2 instructions
+os.environ['FAISS_CPU_ONLY'] = '1'  # Force CPU only
 
 import streamlit as st
 
@@ -22,7 +25,7 @@ from langchain_huggingface import HuggingFaceEndpoint
 
 # Try to import torch with CPU only
 try:
-    # First attempt: Use a CPU-only version of PyTorch if available
+    # First attempt: Use a CPU-only version of PyTorch
     import torch
     torch.set_default_device("cpu")
 except Exception as e:
@@ -40,11 +43,31 @@ DB_FAISS_PATH = "vectorstore/db_faiss"
 @st.cache_resource
 def get_vectorstore():
     try:
+        # Create CPU-only HuggingFace embeddings
         embedding_model = HuggingFaceEmbeddings(
             model_name='sentence-transformers/all-MiniLM-L6-v2',
+            model_kwargs={"device": "cpu"}  # Force CPU for embeddings
         )
-        db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
-        return db
+        
+        # Safely load FAISS index
+        try:
+            db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+            return db
+        except Exception as vector_error:
+            st.error(f"Error loading vector store: {str(vector_error)}")
+            
+            # Fallback - try to create a new empty vector store if loading fails
+            try:
+                st.warning("Attempting to create a new vector store...")
+                # Create a simple placeholder vector store
+                texts = ["This is a placeholder document. Please add proper documents to your vector store."]
+                metadatas = [{"source": "placeholder", "page": "1"}]
+                db = FAISS.from_texts(texts, embedding_model, metadatas=metadatas)
+                return db
+            except Exception as create_error:
+                st.error(f"Failed to create fallback vector store: {str(create_error)}")
+                return None
+                
     except Exception as e:
         st.error(f"Failed to load vector store: {str(e)}")
         return None
@@ -68,7 +91,7 @@ def load_llm(huggingface_repo_id):
             token=hf_token,
             temperature=0.5,
             max_length=512,
-            model_kwargs={}
+            model_kwargs={"device": "cpu"}  # Force CPU here too
         )
         return llm
     except Exception as e:
@@ -97,6 +120,18 @@ def format_source_documents(source_docs):
 def main():
     st.title("🏥 MediBot - Your Medical Assistant")
     st.markdown("Ask any medical questions and get answers from reliable sources")
+    
+    # Display information about CUDA status
+    with st.sidebar:
+        st.header("System Info")
+        try:
+            import torch
+            cuda_available = torch.cuda.is_available()
+            st.info(f"CUDA Available: {cuda_available}")
+            if cuda_available:
+                st.info(f"CUDA Device: {torch.cuda.get_device_name(0)}")
+        except:
+            st.info("CUDA Status: Not available")
     
     # Initialize session state for chat history
     if 'messages' not in st.session_state:
