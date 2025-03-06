@@ -44,6 +44,7 @@ logs/
 .vscode/
 *.swp
 *.swo
-# Git ignore file
-.env
-.streamlit/secrets.toml
+
+echo ".env" >> .gitignore
+echo "streamlit/secrets.toml" >> .gitignore
+echo "streamlit/scerets.toml" >> .gitignore
