@@ -1,13 +1,17 @@
+import os
+# Force CPU-only mode before importing torch
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
 import streamlit as st
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
-import torch  # Add this line
+import torch  # Import torch after setting environment variable
 
-# Force CPU usage for torch
-torch.set_default_device("cpu")  # Add this line
+# Keep this line as well for extra safety
+torch.set_default_device("cpu")
 
 # Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
