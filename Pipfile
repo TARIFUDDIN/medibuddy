@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 requests = "*"
+langchain = "*"
+langchain-community = "*"
+langchain-core = "*"
+langchain-huggingface = "*"
 
 [dev-packages]
 
