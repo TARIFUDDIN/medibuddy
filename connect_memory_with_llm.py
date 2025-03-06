@@ -5,10 +5,10 @@ from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import streamlit as st
-import torch  
+import torch
 
 # Force CPU usage for torch
-torch.set_default_device("cpu") 
+torch.set_default_device("cpu")
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -16,14 +16,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # Default model
 HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
 
-# Rest of the code remains the same...
-
 def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
-    """Load a model using HuggingFace Endpoint API."""
     try:
-        # Get token from Streamlit secrets
         HF_TOKEN = st.secrets.get("HF_TOKEN")
-        
         if not HF_TOKEN:
             print("HuggingFace API token not found in secrets.toml.")
             return None
@@ -42,7 +37,6 @@ def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
         print("Please ensure you have set the HF_TOKEN in .streamlit/secrets.toml.")
         raise
 
-# Step 2: Connect LLM with FAISS and Create chain
 CUSTOM_PROMPT_TEMPLATE = """
 You are a medical expert. Use the provided context to answer the user's question accurately and concisely.
 If the context does not contain enough information, say "I don't know."
@@ -59,22 +53,25 @@ def set_custom_prompt():
                            input_variables=["context", "question"])
     return prompt
 
-# Function to create the QA chain
 def create_qa_chain():
     try:
-        # Load Database
         DB_FAISS_PATH = "vectorstore/db_faiss"
         
         print("Loading embedding model...")
         embedding_model = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'device': 'cpu', 'normalize_embeddings': True}
         )
         
         print("Loading vector database...")
-        db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
+        db = FAISS.load_local(
+            DB_FAISS_PATH, 
+            embedding_model, 
+            allow_dangerous_deserialization=True
+        )
         
         print("Creating QA chain...")
-        # Create QA chain
         qa_chain = RetrievalQA.from_chain_type(
             llm=load_llm(),
             chain_type="stuff",
@@ -87,7 +84,6 @@ def create_qa_chain():
         print(f"Error creating QA chain: {e}")
         raise
 
-# Function to format source documents for better readability
 def format_source_documents(source_docs):
     formatted_docs = []
     for i, doc in enumerate(source_docs):
@@ -100,14 +96,12 @@ def format_source_documents(source_docs):
         formatted_docs.append(formatted_doc)
     return formatted_docs
 
-# Main execution
 if __name__ == "__main__":
     print("Setting up Enhanced Medical QA system...")
     
     try:
         qa_chain = create_qa_chain()
         
-        # Interactive query loop
         while True:
             user_query = input("\nWrite Query Here (or type 'exit' to quit): ")
             
