@@ -14,7 +14,7 @@ try:
         del sys.modules['faiss']
     
     # Try to import CPU version specifically
-    import faiss.contrib.torch_utils
+    import faiss
 except:
     pass
 
