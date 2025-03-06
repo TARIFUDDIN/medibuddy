@@ -1,14 +1,19 @@
-import os  # Add this line
+import os
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 import pypdf
+import torch  # Add this line
+
+# Force CPU usage for torch
+torch.set_default_device("cpu")  # Add this line
 
 # Step 1: Load raw PDF(s)
 DATA_PATH = "Data/"
 
+# Rest of the code remains the same...
 def load_pdf_files(data_path):
     documents = []
     

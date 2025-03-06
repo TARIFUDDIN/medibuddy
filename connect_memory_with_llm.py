@@ -5,12 +5,18 @@ from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import streamlit as st
+import torch  # Add this line
+
+# Force CPU usage for torch
+torch.set_default_device("cpu")  # Add this line
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Default model
 HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
+
+# Rest of the code remains the same...
 
 def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
     """Load a model using HuggingFace Endpoint API."""

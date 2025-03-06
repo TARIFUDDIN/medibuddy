@@ -4,6 +4,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
+import torch  # Add this line
+
+# Force CPU usage for torch
+torch.set_default_device("cpu")  # Add this line
 
 # Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
@@ -20,6 +24,7 @@ def get_vectorstore():
     except Exception as e:
         st.error(f"Failed to load vector store: {str(e)}")
         return None
+
 
 def set_custom_prompt(custom_prompt_template):
     prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
