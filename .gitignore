@@ -2,4 +2,5 @@ echo "vectorstore/" > .gitignore
 echo "*.pyc" >> .gitignore
 echo "__pycache__/" >> .gitignore
 echo ".env" >> .gitignore
-echo "E:\huggingface_cache" >> .gitignore".env" 
+echo "huggingface_cache/" >> .gitignore
+echo "E:\\huggingface_cache" >> .gitignore
