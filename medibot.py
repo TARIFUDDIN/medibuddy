@@ -1,6 +1,12 @@
 import streamlit as st
 import os
 import traceback
+import asyncio
+import nest_asyncio
+
+# Fix event loop issues
+nest_asyncio.apply()
+asyncio.set_event_loop(asyncio.new_event_loop())
 
 # Force CPU-only for PyTorch before any imports
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
