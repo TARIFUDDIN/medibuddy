@@ -4,3 +4,4 @@ __pycache__/
 vectorstore/
 huggingface_cache/
 .env
+".env" 
