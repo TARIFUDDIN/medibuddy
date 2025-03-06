@@ -5,38 +5,37 @@ from langchain_huggingface import HuggingFaceEndpoint
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
+import streamlit as st
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# Set cache directory to E drive
-os.environ["HF_HOME"] = "E:\\huggingface_cache"
-os.environ["TRANSFORMERS_CACHE"] = "E:\\huggingface_cache"
-
-# Step 1: Setup LLM (Mistral with HuggingFace Endpoint)
-# Get HuggingFace token from environment variable
-HF_TOKEN = os.environ.get("HF_TOKEN")
+# Default model
 HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
 
 def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
     """Load a model using HuggingFace Endpoint API."""
     try:
+        # Get token from Streamlit secrets
+        HF_TOKEN = st.secrets.get("HF_TOKEN", None)
+        
+        if not HF_TOKEN:
+            print("HuggingFace API token not found in secrets.toml")
+            return None
+            
         print(f"Loading model from HuggingFace Endpoint: {huggingface_repo_id}")
         llm = HuggingFaceEndpoint(
             repo_id=huggingface_repo_id,
-            token=HF_TOKEN,  # Corrected from model_kwargs
+            token=HF_TOKEN,
             temperature=0.5,
-            max_length=512,  # Corrected from model_kwargs
-            model_kwargs={}  # Keep empty but available for other parameters
+            max_length=512,
+            model_kwargs={}
         )
         return llm
     except Exception as e:
         print(f"Error loading HuggingFace Endpoint: {e}")
-        print("Please ensure you have set the HF_TOKEN environment variable.")
-        print("Falling back to a smaller local model if available...")
-        
-        # You could implement a fallback to a local model here if needed
-        # For now, re-raise the exception
+        print("Please ensure you have set the HF_TOKEN in .streamlit/secrets.toml")
+        # Re-raise the exception
         raise
 
 # Step 2: Connect LLM with FAISS and Create chain
@@ -64,8 +63,7 @@ def create_qa_chain():
         
         print("Loading embedding model...")
         embedding_model = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            cache_folder="E:\\huggingface_cache"  # Explicitly set cache folder
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
         )
         
         print("Loading vector database...")
@@ -132,6 +130,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error in main execution: {e}")
         print("Please ensure:")
-        print("1. Your HF_TOKEN environment variable is set")
+        print("1. Your HF_TOKEN is set in .streamlit/secrets.toml")
         print("2. Your vectorstore/db_faiss directory exists")
         print("3. You have internet connectivity to HuggingFace")

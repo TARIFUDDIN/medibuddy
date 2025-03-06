@@ -6,10 +6,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
 
-# Set cache directory if needed
-os.environ["HF_HOME"] = "E:\\huggingface_cache"
-os.environ["TRANSFORMERS_CACHE"] = "E:\\huggingface_cache"
-
 # Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
@@ -19,7 +15,6 @@ def get_vectorstore():
     try:
         embedding_model = HuggingFaceEmbeddings(
             model_name='sentence-transformers/all-MiniLM-L6-v2',
-            cache_folder="E:\\huggingface_cache"  # Explicitly set cache folder
         )
         db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
         return db
@@ -31,18 +26,21 @@ def set_custom_prompt(custom_prompt_template):
     prompt = PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
     return prompt
 
-def load_llm(huggingface_repo_id, hf_token):
+def load_llm(huggingface_repo_id):
+    # Get token from Streamlit secrets
+    hf_token = st.secrets.get("HF_TOKEN", None)
+    
     if not hf_token:
-        st.error("HuggingFace API token not found. Please set the HF_TOKEN environment variable.")
+        st.error("HuggingFace API token not found in secrets. Please configure it in your .streamlit/secrets.toml file.")
         return None
     
     try:
         llm = HuggingFaceEndpoint(
             repo_id=huggingface_repo_id,
-            token=hf_token,  # Direct parameter instead of in model_kwargs
+            token=hf_token,
             temperature=0.5,
-            max_length=512,  # Direct parameter
-            model_kwargs={}  # Keep for other parameters
+            max_length=512,
+            model_kwargs={}
         )
         return llm
     except Exception as e:
@@ -86,14 +84,6 @@ def main():
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'])
-    
-    # Get HuggingFace token - first check environment, then sidebar input if needed
-    hf_token = os.environ.get("HF_TOKEN")
-    if not hf_token:
-        with st.sidebar:
-            st.header("Configuration")
-            hf_token = st.text_input("Enter HuggingFace API Token:", type="password")
-            st.info("Your token will not be stored permanently.")
     
     # Add the model selection option
     with st.sidebar:
@@ -145,7 +135,7 @@ def main():
                         return
                     
                     # Initialize language model
-                    llm = load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, hf_token=hf_token)
+                    llm = load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID)
                     if llm is None:
                         return
                     
@@ -183,7 +173,7 @@ def main():
                     
                 except Exception as e:
                     st.error(f"Error processing your query: {str(e)}")
-                    st.info("Please check your HuggingFace API token and internet connection.")
+                    st.info("Please check your HuggingFace API token in the secrets.toml file.")
 
 if __name__ == "__main__":
     main()

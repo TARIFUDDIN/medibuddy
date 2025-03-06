@@ -1,32 +1,75 @@
-# Create README.md with the project description
-echo "# MediBot - Medical Assistant Chatbot
+# MediBot - Medical Question Answering System
 
-## Description
+MediBot is an AI-powered medical assistant that can answer health-related questions based on medical literature. The system uses natural language processing and a vector database to provide accurate medical information from reliable sources.
 
-MediBot is an intelligent medical assistant chatbot designed to provide accurate and reliable medical information sourced from trusted medical texts and research papers. Built with modern AI technology, the application allows users to ask medical questions in natural language and receive informative responses backed by cited medical sources.
+## Features
 
-### Key Features
+- Chat-based interface for asking medical questions
+- Uses advanced language models for accurate responses
+- Provides sources for all information presented
+- Self-contained system that can run locally or be deployed to the cloud
 
-- **AI-Powered Medical Knowledge**: Utilizes advanced language models (Mistral-7B and FLAN-T5) to interpret medical questions and deliver accurate responses
-- **Evidence-Based Information**: Retrieves information from a curated database of medical literature, ensuring answers are grounded in medical science
-- **Source Citations**: Every response includes references to the source documents, providing transparency and allowing users to verify information
-- **User-Friendly Interface**: Clean, intuitive Streamlit interface makes it easy for anyone to access medical information
-- **Customizable AI Models**: Users can select between different AI models to power their experience
-- **Privacy-Focused**: Processes queries locally without storing conversation data
+## Requirements
 
-### Use Cases
+- Python 3.8 or higher
+- Streamlit
+- LangChain
+- HuggingFace account and API token
+- FAISS for vector search
 
-- Quick access to basic medical information and explanations
-- Understanding medical terminology and concepts
-- Learning about symptoms, conditions, treatments, and medications
-- Educational tool for medical students and healthcare professionals
-- Preliminary research tool for patients before consulting healthcare providers
+## Installation
 
-### Important Note
+1. Clone this repository:
+   ```
+   git clone https://github.com/your-username/medibot.git
+   cd medibot
+   ```
 
-MediBot is designed for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult qualified healthcare providers for medical concerns. The application aims to make medical information more accessible while maintaining accuracy through its citation system." > README.md
+2. Install the required packages:
+   ```
+   pip install -r requirements.txt
+   ```
 
-# Add and commit README
-git add README.md
-git commit -m "Add README.md with project description"
-git push origin main
+3. Set up your HuggingFace API token:
+   - Create a `.streamlit/secrets.toml` file (this file should not be committed to Git)
+   - Add your HuggingFace token:
+     ```
+     HF_TOKEN = "your-huggingface-token"
+     ```
+
+4. Add medical PDFs:
+   - Create a `Data` directory
+   - Place medical PDF documents in the `Data` directory
+
+5. Index your documents:
+   ```
+   python creatememory.llm.py
+   ```
+
+## Usage
+
+1. Start the Streamlit app:
+   ```
+   streamlit run medibot.py
+   ```
+
+2. Open your browser and navigate to the provided URL (usually http://localhost:8501)
+
+3. Ask medical questions in the chat interface
+
+## Structure
+
+- `medibot.py` - Main Streamlit application file
+- `connectwithllm.py` - Handles connections to LLM models
+- `creatememory.llm.py` - Indexes documents for the vector database
+- `requirements.txt` - Required Python packages
+- `Data/` - Directory for storing medical PDFs
+- `vectorstore/` - Generated vector database (not included in repository)
+
+## Deployment
+
+You can deploy this application to Streamlit Cloud, Hugging Face Spaces, or other Python-compatible platforms.
+
+## Disclaimer
+
+This application is for informational purposes only and not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.

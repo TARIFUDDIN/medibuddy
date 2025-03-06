@@ -1,7 +1,46 @@
+# Python
 __pycache__/
-*.log
-*.db
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+.env
+.venv
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Project specific
 vectorstore/
 huggingface_cache/
-.env
-".env" 
+Data/*.pdf
+
+# Logs
+*.log
+logs/
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
