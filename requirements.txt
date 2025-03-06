@@ -7,4 +7,4 @@ faiss-cpu
 sentence-transformers
 pypdf
 python-dotenv
-torch
+torch==2.2.1+cpu --index-url https://download.pytorch.org/whl/cpu

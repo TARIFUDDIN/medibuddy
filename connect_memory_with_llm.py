@@ -5,10 +5,10 @@ from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import streamlit as st
-import torch  # Add this line
+import torch  
 
 # Force CPU usage for torch
-torch.set_default_device("cpu")  # Add this line
+torch.set_default_device("cpu") 
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
