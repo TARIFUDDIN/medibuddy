@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv  # Import the dotenv package
 import warnings
 from langchain.chains import RetrievalQA
 from langchain_huggingface import HuggingFaceEndpoint
@@ -6,6 +7,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import streamlit as st
+
+
+load_dotenv()
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -16,11 +20,11 @@ HUGGINGFACE_REPO_ID = "mistralai/Mistral-7B-Instruct-v0.3"
 def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
     """Load a model using HuggingFace Endpoint API."""
     try:
-        # Get token from Streamlit secrets
-        HF_TOKEN = st.secrets.get("HF_TOKEN", None)
+        # Get token from .env file
+        HF_TOKEN = os.getenv("HF_TOKEN")
         
         if not HF_TOKEN:
-            print("HuggingFace API token not found in secrets.toml")
+            print("HuggingFace API token not found in .env file.")
             return None
             
         print(f"Loading model from HuggingFace Endpoint: {huggingface_repo_id}")
@@ -34,8 +38,7 @@ def load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID):
         return llm
     except Exception as e:
         print(f"Error loading HuggingFace Endpoint: {e}")
-        print("Please ensure you have set the HF_TOKEN in .streamlit/secrets.toml")
-        # Re-raise the exception
+        print("Please ensure you have set the HF_TOKEN in .env file.")
         raise
 
 # Step 2: Connect LLM with FAISS and Create chain
@@ -130,6 +133,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Error in main execution: {e}")
         print("Please ensure:")
-        print("1. Your HF_TOKEN is set in .streamlit/secrets.toml")
+        print("1. Your HF_TOKEN is set in .env file")
         print("2. Your vectorstore/db_faiss directory exists")
         print("3. You have internet connectivity to HuggingFace")
