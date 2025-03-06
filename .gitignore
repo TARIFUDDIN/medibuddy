@@ -44,3 +44,6 @@ logs/
 .vscode/
 *.swp
 *.swo
+# Git ignore file
+.env
+.streamlit/secrets.toml
