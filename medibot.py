@@ -6,16 +6,20 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_huggingface import HuggingFaceEndpoint
 
+# Set cache directory if needed
 os.environ["HF_HOME"] = "E:\\huggingface_cache"
 os.environ["TRANSFORMERS_CACHE"] = "E:\\huggingface_cache"
 
+# Vector store path
 DB_FAISS_PATH = "vectorstore/db_faiss"
+
+# Cache the vector store to avoid reloading it on each interaction
 @st.cache_resource
 def get_vectorstore():
     try:
         embedding_model = HuggingFaceEmbeddings(
             model_name='sentence-transformers/all-MiniLM-L6-v2',
-            cache_folder="E:\\huggingface_cache"  
+            cache_folder="E:\\huggingface_cache"  # Explicitly set cache folder
         )
         db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
         return db
@@ -35,19 +39,24 @@ def load_llm(huggingface_repo_id, hf_token):
     try:
         llm = HuggingFaceEndpoint(
             repo_id=huggingface_repo_id,
-            token=hf_token,  
+            token=hf_token,  # Direct parameter instead of in model_kwargs
             temperature=0.5,
-            max_length=512, 
-            model_kwargs={}  
+            max_length=512,  # Direct parameter
+            model_kwargs={}  # Keep for other parameters
         )
         return llm
     except Exception as e:
         st.error(f"Failed to initialize language model: {str(e)}")
+        return None
+
+# Format source documents for better readability
 def format_source_documents(source_docs):
     formatted_text = "**Source Documents:**\n\n"
     for i, doc in enumerate(source_docs):
         source = doc.metadata.get("source", "Unknown")
         page = doc.metadata.get("page", "N/A")
+        
+        # Truncate long content
         content = doc.page_content
         if len(content) > 200:
             content = content[:200] + "..."
@@ -65,19 +74,28 @@ def main():
         page_icon="🏥",
         layout="wide"
     )
+    
     st.title("🏥 MediBot - Your Medical Assistant")
     st.markdown("Ask any medical questions and get answers from reliable sources")
+    
+    # Initialize session state for chat history
     if 'messages' not in st.session_state:
         st.session_state.messages = []
+    
+    # Display chat history
     for message in st.session_state.messages:
         with st.chat_message(message['role']):
             st.markdown(message['content'])
+    
+    # Get HuggingFace token - first check environment, then sidebar input if needed
     hf_token = os.environ.get("HF_TOKEN")
     if not hf_token:
         with st.sidebar:
             st.header("Configuration")
             hf_token = st.text_input("Enter HuggingFace API Token:", type="password")
             st.info("Your token will not be stored permanently.")
+    
+    # Add the model selection option
     with st.sidebar:
         st.header("Model Settings")
         model_option = st.selectbox(
@@ -89,12 +107,19 @@ def main():
         st.header("About")
         st.markdown("MediBot uses AI to provide medical information from reliable sources.")
         st.markdown("This is for informational purposes only and not a substitute for professional medical advice.")
+    
+    # Chat input
     prompt = st.chat_input("Ask a medical question...")
     
     if prompt:
+        # Show user message
         with st.chat_message("user"):
             st.markdown(prompt)
+        
+        # Add to session state
         st.session_state.messages.append({'role': 'user', 'content': prompt})
+        
+        # Custom prompt template
         CUSTOM_PROMPT_TEMPLATE = """
         You are a medical expert. Use the provided context to answer the user's question accurately and concisely.
         If the context does not contain enough information, say "I don't know."
@@ -105,20 +130,26 @@ def main():
 
         Answer:
         """
-
+        
+        # Get selected model
         HUGGINGFACE_REPO_ID = model_option
-
+        
+        # Processing indicator
         with st.chat_message("assistant"):
             with st.status("Searching medical knowledge base...", expanded=True) as status:
                 try:
+                    # Get vector store
                     vectorstore = get_vectorstore()
                     if vectorstore is None:
                         st.error("Failed to load the vector store. Please check your database path.")
                         return
-
+                    
+                    # Initialize language model
                     llm = load_llm(huggingface_repo_id=HUGGINGFACE_REPO_ID, hf_token=hf_token)
                     if llm is None:
                         return
+                    
+                    # Create QA chain
                     qa_chain = RetrievalQA.from_chain_type(
                         llm=llm,
                         chain_type="stuff",
@@ -126,11 +157,19 @@ def main():
                         return_source_documents=True,
                         chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
                     )
+                    
+                    # Get response
                     status.update(label="Generating response...")
                     response = qa_chain.invoke({'query': prompt})
+                    
+                    # Format result
                     result = response["result"]
                     source_documents = response["source_documents"]
+                    
+                    # Format sources in a nice way
                     formatted_sources = format_source_documents(source_documents)
+                    
+                    # Complete response
                     full_response = f"{result}\n\n{formatted_sources}"
                     
                     # Update status

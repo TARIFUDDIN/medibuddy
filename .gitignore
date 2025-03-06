@@ -3,4 +3,5 @@ echo "*.pyc" >> .gitignore
 echo "__pycache__/" >> .gitignore
 echo ".env" >> .gitignore
 echo "huggingface_cache/" >> .gitignore
-echo "E:\\huggingface_cache" >> .gitignore
+echo "E:\\huggingface_cache" >> .gitignore".streamlit/secrets.toml" 
+echo ".streamlit/secrets.toml" >> .gitignore
