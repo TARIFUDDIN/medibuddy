@@ -48,3 +48,4 @@ logs/
 echo ".env" >> .gitignore
 echo "streamlit/secrets.toml" >> .gitignore
 echo "streamlit/scerets.toml" >> .gitignore
+streamlit/secrets.toml
